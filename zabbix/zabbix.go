@@ -3,13 +3,9 @@ package zabbix
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
-	"os"
-
-	"github.com/joho/godotenv"
 )
 
 type Zabbix struct {
@@ -18,22 +14,8 @@ type Zabbix struct {
 	Client http.Client
 }
 
-func (z *Zabbix) Login() error {
-	godotenv.Load()
-
-	z.Url = os.Getenv("ZABBIXURL")
-	if z.Url == "" {
-		return errors.New("environment variable ZABBIXURL not defined")
-	}
-	user := os.Getenv("ZABBIXUSER")
-	if user == "" {
-		return errors.New("environment variable ZABBIXUSER not defined")
-	}
-	passwd := os.Getenv("ZABBIXPASSWD")
-
-	if passwd == "" {
-		return errors.New("environment variable ZABBIXPASSWD not defined")
-	}
+func (z *Zabbix) Login(zabbixUrl string, zabbixUser string, zabbixPassword string) error {
+	z.Url = zabbixUrl
 
 	jsonAuth := fmt.Sprintf(`
 	{
@@ -45,7 +27,7 @@ func (z *Zabbix) Login() error {
 		},
 		"id": 1,
 		"auth": null
-	}`, user, passwd)
+	}`, zabbixUser, zabbixPassword)
 
 	data := bytes.NewBuffer([]byte(jsonAuth))
 
@@ -60,7 +42,7 @@ func (z *Zabbix) Login() error {
 		return err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}
@@ -102,43 +84,108 @@ func (z *Zabbix) Logout() error {
 	return nil
 }
 
-func (z *Zabbix) GetHosts() error {
+func (z *Zabbix) GetHosts(params string) ([]ZabbixHost, error) {
 	jsonGetHosts := fmt.Sprintf(`
 	{
 		"jsonrpc": "2.0",
 		"method": "host.get",
-		"params": {
-			"selectGroups": "extend",
-			"filter": {
-				"host": ["Zabbix server"]
-				}
-			},		
+		"params": %s,
 		"id": 1,
 		"auth": "%s" 
-	}`, z.Token)
+	}`, params, z.Token)
 
 	data := bytes.NewBuffer([]byte(jsonGetHosts))
 
 	req, err := http.NewRequest("POST", z.Url+"/api_jsonrpc.php", data)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := z.Client.Do(req)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+
+	//fmt.Println(string(body))
+
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	fmt.Println(string(body))
+	type response struct {
+		Jsonrpc string       `json:"jsonrpc"`
+		Result  []ZabbixHost `json:"result"`
+	}
 
-	return nil
+	var res *response
+
+	err = json.Unmarshal(body, &res)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Result, nil
+}
+
+func (z *Zabbix) GetGroup(groupName string) (HostGroup, error) {
+
+	listGroup := []string{groupName}
+
+	convertString, _ := json.Marshal(listGroup)
+
+	jsonGetGroup := fmt.Sprintf(`
+	{
+		"jsonrpc": "2.0",
+		"method": "hostgroup.get",
+		"params": {
+			"output": ["groupid","name"],
+			"filter": {
+				"name": %v
+			}
+		},		
+		"id": 1,
+		"auth": "%s" 
+	}`, string(convertString), z.Token)
+
+	data := bytes.NewBuffer([]byte(jsonGetGroup))
+
+	req, err := http.NewRequest("POST", z.Url+"/api_jsonrpc.php", data)
+	if err != nil {
+		return HostGroup{}, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := z.Client.Do(req)
+
+	if err != nil {
+		return HostGroup{}, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return HostGroup{}, err
+	}
+
+	type response struct {
+		Jsonrpc string      `json:"jsonrpc"`
+		Result  []HostGroup `json:"result"`
+	}
+
+	var res *response
+
+	err = json.Unmarshal(body, &res)
+
+	if err != nil {
+		return HostGroup{}, err
+	}
+
+	return res.Result[0], nil
 
 }

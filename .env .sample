@@ -1,0 +1,10 @@
+INV_ZABBIX_URL="zabbix_url"
+INV_ZABBIX_USER="admin"
+INV_ZABBIX_PASSWORD="password"
+
+INV_IGNORE_DISABLED_HOST="true" # default false
+INV_SSH_COMMON_ARGS_TAG="ansible_ssh_common_args"
+INV_HOST_REWRITE_IP_TAG = "host_rewrite_ip"
+INV_HOSTS_RESTRICT_BY_TAGS = "tagName:tagValue"
+INV_HOSTS_RESTRICT_BY_GROUPS = "Linux servers"
+INV_LIST_IPADDRESSES_FOR_INVENTORY="192.168.0.1,192.168.0.2"
