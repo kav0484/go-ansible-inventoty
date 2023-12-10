@@ -13,10 +13,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
+const envPath string = "/etc/default/ansibleInventory"
+
 // init is invoked before main()
 func init() {
-	if err := godotenv.Load(); err != nil {
-		log.Fatal("No .env file found")
+	if _, err := os.Stat(envPath); err == nil {
+		godotenv.Load(envPath)
+	} else {
+		if err := godotenv.Load(); err != nil {
+			log.Fatal("No .env file found")
+		}
 	}
 
 }
