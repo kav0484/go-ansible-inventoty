@@ -13,7 +13,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const envPath string = "/etc/default/ansibleInventory"
+const envPath string = "/etc/default/zabbix-inventory"
 
 // init is invoked before main()
 func init() {
@@ -98,10 +98,10 @@ func main() {
 	}
 
 	//Hosts  search  with special tag for rewrite ip
-	rewriteIPTag := os.Getenv("INV_HOST_REWRITE_IP_TAG")
+	envSSHHostTag := os.Getenv("INV_SSH_ANSIBLE_HOST_TAG")
 
-	if rewriteIPTag != "" {
-		rewriteIPHosts, err := inventory.GetHostWithTag(api, rewriteIPTag)
+	if envSSHHostTag != "" {
+		rewriteIPHosts, err := inventory.GetHostWithTag(api, envSSHHostTag)
 
 		if err != nil {
 			log.Fatal(err)
@@ -112,7 +112,7 @@ func main() {
 				ansibleHostValue, ok := hostvars[host.Name].(map[string]string)
 				if ok {
 					for _, tag := range host.Tags {
-						if tag.Tag == rewriteIPTag {
+						if tag.Tag == envSSHHostTag {
 							ansibleHostValue["ansible_host"] = tag.Value
 						}
 					}
@@ -122,10 +122,10 @@ func main() {
 	}
 
 	//Hosts search with special tag for add in inventory parameter ansible_ssh_common_args
-	sshCommonArgsTag := os.Getenv("INV_SSH_COMMON_ARGS_TAG")
+	envSSHCommonArgsTag := os.Getenv("INV_SSH_COMMON_ARGS_TAG")
 
-	if sshCommonArgsTag != "" {
-		hostsWithCommonArgsTag, err := inventory.GetHostWithTag(api, sshCommonArgsTag)
+	if envSSHCommonArgsTag != "" {
+		hostsWithCommonArgsTag, err := inventory.GetHostWithTag(api, envSSHCommonArgsTag)
 
 		if err != nil {
 			log.Fatal(err)
@@ -136,8 +136,31 @@ func main() {
 				ansibleHostValue, ok := hostvars[host.Name].(map[string]string)
 				if ok {
 					for _, tag := range host.Tags {
-						if tag.Tag == sshCommonArgsTag {
+						if tag.Tag == envSSHCommonArgsTag {
 							ansibleHostValue["ansible_ssh_common_args"] = tag.Value
+						}
+					}
+				}
+			}
+		}
+	}
+
+	//Hosts search with special tag for add in inventory parameter ansible_port
+	envSSHPortTag := os.Getenv("INV_SSH_ANSIBLE_PORT_TAG")
+
+	if envSSHPortTag != "" {
+		hostsWithSSHPortTag, err := inventory.GetHostWithTag(api, envSSHPortTag)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(hostsWithSSHPortTag) > 0 {
+			for _, host := range hostsWithSSHPortTag {
+				ansibleHostValue, ok := hostvars[host.Name].(map[string]string)
+				if ok {
+					for _, tag := range host.Tags {
+						if tag.Tag == envSSHPortTag {
+							ansibleHostValue["ansible_port"] = tag.Value
 						}
 					}
 				}
