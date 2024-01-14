@@ -17,7 +17,7 @@ func CreateGroupWithJoinTag() {
 	fmt.Println("ok")
 }
 
-// Возвращается список тегов и значение по которым нужно ограничить выборку хостов в zabbix
+// ProcessZabbixTags Возвращается список тегов и значение по которым нужно ограничить выборку хостов в zabbix
 func ProcessZabbixTags(restrictTags string) []map[string]string {
 	var tags []map[string]string
 
@@ -57,9 +57,9 @@ func GetHostsRestrictByTags(api zabbix.Zabbix, zabbixTags []map[string]string) (
 	}
 
 	return hosts, nil
-
 }
 
+// GetHostsFromZabbix is function getting hosts from zabbix server
 func GetHostsFromZabbix(api zabbix.Zabbix, zabbixGroups string, zabbixTags string, ignoreDisabled bool) ([]zabbix.ZabbixHost, error) {
 
 	var groups []string
@@ -107,11 +107,9 @@ func GetHostsFromZabbix(api zabbix.Zabbix, zabbixGroups string, zabbixTags strin
 	}
 
 	return hosts, nil
-
-	return hosts, nil
-
 }
 
+// GetHostsWithGroups is function getting hosts from zabbix server with groups
 func GetHostsWithGroups(api zabbix.Zabbix) ([]zabbix.ZabbixHost, error) {
 	params := make(map[string]interface{})
 	params["output"] = []string{"hostid", "name"}
@@ -147,5 +145,4 @@ func GetHostWithTag(api zabbix.Zabbix, tag string) ([]zabbix.ZabbixHost, error) 
 	}
 
 	return hosts, nil
-
 }

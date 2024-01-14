@@ -81,20 +81,28 @@ func main() {
 	for _, host := range hosts {
 		ansibleHost := map[string]string{}
 
-		ansibleHost["visible_name"] = host.Name
+		hostChan := make(chan map[string]string)
 
-		if len(host.Interfaces) == 0 {
-			continue
-		} else {
-			ansibleHost["ansible_host"] = host.Interfaces[0].IP
+		go func(host zabbix.ZabbixHost, hostChan chan<- map[string]string) {
+
+			if len(host.Interfaces) != 0 {
+				ansibleHost["visible_name"] = host.Name
+				ansibleHost["ansible_host"] = host.Interfaces[0].IP
+			}
+			hostChan <- ansibleHost
+			close(hostChan)
+		}(host, hostChan)
+
+		for h := range hostChan {
+			if len(h) != 0 {
+				hostvars[h["visible_name"]] = h
+			}
+		}
+		for _, group := range host.Groups {
+			groupName := strings.Join(strings.Split(group.Name, " "), "_")
+			ansibleGroupVar[groupName] = append(ansibleGroupVar[groupName], host.Name)
 		}
 
-		hostvars[host.Name] = ansibleHost
-
-		for _, g := range host.Groups {
-			group := strings.Join(strings.Split(g.Name, " "), "_")
-			ansibleGroupVar[group] = append(ansibleGroupVar[group], host.Name)
-		}
 	}
 
 	//Hosts  search  with special tag for rewrite ip
