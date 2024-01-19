@@ -4,7 +4,7 @@ go env -w CGO_ENABLED=0
 go build  -o zabbix-inventory main.go
 
 #ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ
-Сначала пытается загрузить переменные с /etc/default/zabbix-inventory, если файла не существует то из .env файла текущей директории
+Сначала пытается загрузить переменные из .env файла текущей директории  если файла не существует то c /etc/default/zabbix-inventory
 
 
 INV_ZABBIX_URL="https://zabbix.domain.local"

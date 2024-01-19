@@ -13,15 +13,16 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const envPath string = "/etc/default/zabbix-inventory"
+const defEnv string = "/etc/default/zabbix-inventory"
 
 // init is invoked before main()
 func init() {
-	if _, err := os.Stat(envPath); err == nil {
-		godotenv.Load(envPath)
-	} else {
-		if err := godotenv.Load(); err != nil {
-			log.Fatal("No .env file found")
+
+	errEnv := godotenv.Load()
+
+	if errEnv != nil {
+		if _, errDefEnv := os.Stat(defEnv); errDefEnv == nil {
+			godotenv.Load(defEnv)
 		}
 	}
 
